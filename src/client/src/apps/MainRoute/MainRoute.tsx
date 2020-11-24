@@ -12,6 +12,9 @@ import GlobalScrollbarStyle from './GlobalScrollbarStyle'
 import { createStore } from './store'
 import { AsyncReturnType } from 'rt-util/utilityTypes'
 import { getAppName } from 'rt-util'
+import { Store } from 'redux'
+
+export let exportedStore: Store
 
 const MainRoute = () => {
   type Platform = AsyncReturnType<typeof getPlatformAsync>
@@ -26,6 +29,7 @@ const MainRoute = () => {
     const getPlatform = async () => {
       const runningPlatform = await getPlatformAsync()
       const store = await createStore(runningPlatform)
+      exportedStore = store
       setPlatform(runningPlatform)
       setStore(store)
     }

@@ -3,7 +3,7 @@ import Glue, { Glue42 as GlueInterface } from '@glue42/desktop'
 import Glue4Office, { Glue42Office as Glue42OfficeInterface } from '@glue42/office'
 import { WindowConfig } from '../types'
 import { Platform } from '../platform'
-import { openGlueWindow, registerWindowMethods } from './window'
+import { openGlueWindow, registerGlueMethods, registerWindowMethods } from './window'
 import { sendNotification, NotifyPermission } from './utils/sendNotification'
 import DefaultRoute from 'rt-platforms/defaultRoute'
 import { ApplicationEpic } from 'StoreTypes'
@@ -26,10 +26,12 @@ export class Glue42 implements Platform {
       .then((glue: GlueInterface.Glue) => {
         window.glue = glue
         registerWindowMethods()
+        
         return Glue4Office()
       })
       .then((glue4office: Glue42OfficeInterface.Glue4Office) => {
         window.glue4office = glue4office
+        registerGlueMethods()
       })
       .catch((err: any) => {
         console.error(err)

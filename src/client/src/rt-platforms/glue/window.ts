@@ -1,9 +1,14 @@
+import uuid from 'uuid'
 import { Glue42 } from '@glue42/desktop'
 import { Glue42Core } from '@glue42/core'
 import _ from 'lodash'
 import { WindowConfig } from '../types'
 import { frameButtonBase64 } from './utils/frameButtonImage'
 import { CanvasAPI } from './canvas'
+import { exportedStore } from 'apps/MainRoute/MainRoute'
+import { Direction } from 'rt-types'
+import { SpotTileActions } from 'apps/MainRoute/widgets/spotTile/actions'
+import { ExecuteTradeRequest } from 'apps/MainRoute/widgets/spotTile/model/executeTradeRequest'
 
 type BrowserWindowProps = WindowConfig
 type GDWindow = Glue42.Windows.GDWindow
@@ -65,6 +70,36 @@ export const registerWindowMethods = () => {
     window.glue.interop.invoke('toggleHeaderButtons', {
       numberOfOpenedWindows: listOfOpenedWindows.length
     })
+  })
+}
+
+export const registerGlueMethods = () => {
+  interface Trade {
+    currencyPair: string // consists of two country-specific three-letter alphabetic code together
+    dealtCurrency: string // also called base currency, country-specific three-letter alphabetic code
+    direction: 'Buy' | 'Sell'
+    notional: number // a whole number
+  }
+
+  window.glue.interop.register({
+    name: 'T42.OMS.TradeCurrPair',
+    accepts: "String currencyPair, String dealtCurrency, String direction, Long notional", // e.g. { currencyPair: 'USDJPY', dealtCurrency: 'USD', direction: 'Buy', notional: 1000000 }
+  }, ({ currencyPair, dealtCurrency, direction, notional }: Trade) => {
+    window.glue.windows.my().focus()
+    if (Object.keys(exportedStore.getState().spotTilesData).includes(currencyPair)) {
+      const priceData = exportedStore.getState().spotTilesData[currencyPair]
+      const spotRate = direction === Direction.Buy ? priceData.price.ask : priceData.price.bid
+      const tradeRequestObj: ExecuteTradeRequest = {
+        CurrencyPair: currencyPair,
+        DealtCurrency: dealtCurrency,
+        Direction: direction === Direction.Buy ? Direction.Buy : Direction.Sell,
+        Notional: notional,
+        SpotRate: spotRate,
+        id: uuid()
+      }
+      
+      exportedStore.dispatch(SpotTileActions.executeTrade(tradeRequestObj, null))
+    }
   })
 }
 
